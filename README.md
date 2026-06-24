@@ -5,7 +5,7 @@ Assignment 0: Project Planning & GitHub Setup
 
 ## Group Information
 
-Group Assignment: New Group 8
+Group Assignment: New Group 8  
 Group Name: QuickStop Devs
 
 ## Group Members

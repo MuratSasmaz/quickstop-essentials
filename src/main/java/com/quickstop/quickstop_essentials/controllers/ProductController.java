@@ -17,54 +17,57 @@ import org.springframework.ui.Model;
 
 import org.springframework.validation.BindingResult;
 
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class ProductController {
-    
+
     private final ProductService productService;
 
     public ProductController(ProductService productService) {
         this.productService = productService;
     }
 
-    // home page
     @GetMapping("/")
     public String home() {
         return "home";
     }
 
-    // about page
     @GetMapping("/about")
     public String about() {
         return "about";
     }
 
-    // pickup Locations page
     @GetMapping("/locations")
     public String locations() {
         return "locations";
     }
 
-    // add product form
     @GetMapping("/products/new")
     public String displayAddProduct(Model model) {
         model.addAttribute("product", new Product());
         model.addAttribute("brands", Brand.values());
         model.addAttribute("categories", Category.values());
 
-        return "add-product";
+        return "products/form";
     }
 
-    // save Product
     @PostMapping("/products")
-    public String saveProduct(@Valid @ModelAttribute("product") Product product, BindingResult bindingResult, Model model) {
-        
+    public String saveProduct(
+            @Valid @ModelAttribute("product") Product product,
+            BindingResult bindingResult,
+            Model model
+    ) {
+
         if (bindingResult.hasErrors()) {
             model.addAttribute("brands", Brand.values());
             model.addAttribute("categories", Category.values());
 
-            return "add-product";
+            return "products/form";
         }
 
         Product savedProduct = productService.saveProduct(product);
@@ -72,64 +75,120 @@ public class ProductController {
         return "redirect:/products/" + savedProduct.getId();
     }
 
-    // product List with search, filter, sorting, pagination
     @GetMapping("/products")
     public String displayProducts(
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "6") int size,
-        @RequestParam(defaultValue = "name") String sort,
-        @RequestParam(defaultValue = "ASC") String direction,
-        @RequestParam(required = false) String search,
-        @RequestParam(required = false) Brand brand,
-        @RequestParam(required = false) Category category,
-        Model model
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size,
+            @RequestParam(defaultValue = "nameAsc") String sort,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String brand,
+            @RequestParam(required = false) String category,
+            Model model
     ) {
-        
-        Sort.Direction sortDirection = Sort.Direction.fromString(direction);
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sort));
+
+        if (page < 0) {
+            page = 0;
+        }
+
+        if (size <= 0) {
+            size = 6;
+        }
+
+        Sort productSort = getProductSort(sort);
+        Pageable pageable = PageRequest.of(page, size, productSort);
+
+        Brand selectedBrand = parseBrand(brand);
+        Category selectedCategory = parseCategory(category);
 
         Page<Product> productPage;
 
         if (search != null && !search.trim().isEmpty()) {
-            productPage = productService.searchByName(search.trim(), pageable);
-        } else if (brand != null && category != null) {
-            productPage = productService.getProductsByBrandAndCategory(brand, category, pageable);
-        } else if (brand != null) {
-            productPage = productService.getProductsByBrand(brand, pageable);
-        } else if (category != null) {
-            productPage = productService.getProductsByCategory(category, pageable);
+            productPage = productService.searchByName(
+                    search.trim(),
+                    pageable
+            );
+        } else if (selectedBrand != null && selectedCategory != null) {
+            productPage = productService.getProductsByBrandAndCategory(
+                    selectedBrand,
+                    selectedCategory,
+                    pageable
+            );
+        } else if (selectedBrand != null) {
+            productPage = productService.getProductsByBrand(
+                    selectedBrand,
+                    pageable
+            );
+        } else if (selectedCategory != null) {
+            productPage = productService.getProductsByCategory(
+                    selectedCategory,
+                    pageable
+            );
         } else {
             productPage = productService.getProducts(pageable);
         }
 
-        model.addAttribute("products",productPage.getContent());
-        model.addAttribute("totalPages", productPage.getTotalPages());
-        model.addAttribute("totalElements", productPage.getTotalElements());
-        model.addAttribute("currentPage", page);
-        model.addAttribute("pageSize", size);
-        model.addAttribute("hasPrevious", productPage.hasPrevious());
-        model.addAttribute("hasNext", productPage.hasNext());
+        model.addAttribute("productPage", productPage);
+        model.addAttribute("brands", Brand.values());
+        model.addAttribute("categories", Category.values());
 
         model.addAttribute("search", search);
         model.addAttribute("brand", brand);
         model.addAttribute("category", category);
         model.addAttribute("sort", sort);
-        model.addAttribute("direction", direction);
-        model.addAttribute("brands", Brand.values());
-        model.addAttribute("categories",Category.values());
 
-        return "products";
+        return "products/list";
     }
 
-    // product details
     @GetMapping("/products/{id}")
-    public String productDetails(@PathVariable Long id, Model model) {
-        
+    public String productDetails(
+            @PathVariable Long id,
+            Model model
+    ) {
+
         Product product = productService.getProductById(id);
 
         model.addAttribute("product", product);
 
-        return "product-details";
+        return "products/details";
     }
-    
+
+    private Sort getProductSort(String sort) {
+        return switch (sort) {
+            case "nameDesc" ->
+                    Sort.by(Sort.Direction.DESC, "name");
+
+            case "priceAsc" ->
+                    Sort.by(Sort.Direction.ASC, "price");
+
+            case "priceDesc" ->
+                    Sort.by(Sort.Direction.DESC, "price");
+
+            default ->
+                    Sort.by(Sort.Direction.ASC, "name");
+        };
+    }
+
+    private Brand parseBrand(String brand) {
+        if (brand == null || brand.isBlank()) {
+            return null;
+        }
+
+        try {
+            return Brand.valueOf(brand);
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
+    }
+
+    private Category parseCategory(String category) {
+        if (category == null || category.isBlank()) {
+            return null;
+        }
+
+        try {
+            return Category.valueOf(category);
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
+    }
 }

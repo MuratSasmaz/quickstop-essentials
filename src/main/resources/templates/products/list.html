@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Products | QuickStop Essentials</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link th:href="@{/css/styles.css}" rel="stylesheet">
+</head>
+<body class="d-flex flex-column min-vh-100">
+<header th:replace="~{fragments/layout :: navbar}"></header>
+<main class="container flex-grow-1 py-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+        <div><span class="section-kicker">Catalogue</span><h1 class="fw-bold mb-1">Browse Products</h1><p class="text-secondary mb-0">Search our collection of everyday essentials.</p></div>
+        <a class="btn btn-primary" th:href="@{/products/new}"><i class="bi bi-plus-circle me-1"></i>Add Product</a>
+    </div>
+
+    <form class="filter-panel mb-4" method="get" th:action="@{/products}">
+        <div class="row g-3 align-items-end">
+            <div class="col-lg-4"><label class="form-label fw-semibold" for="search">Search</label><div class="input-group"><span class="input-group-text bg-white"><i class="bi bi-search"></i></span><input class="form-control" id="search" name="search" th:value="${search}" placeholder="Search by product name"></div></div>
+            <div class="col-sm-6 col-lg-2"><label class="form-label fw-semibold" for="brand">Brand</label><select class="form-select" id="brand" name="brand"><option value="">All Brands</option><option th:each="brandOption : ${brands}" th:value="${brandOption}" th:text="${#strings.replace(brandOption.name(), '_', ' ')}" th:selected="${brand != null and brand == brandOption.name()}"></option></select></div>
+            <div class="col-sm-6 col-lg-2"><label class="form-label fw-semibold" for="category">Category</label><select class="form-select" id="category" name="category"><option value="">All Categories</option><option th:each="categoryOption : ${categories}" th:value="${categoryOption}" th:text="${#strings.replace(categoryOption.name(), '_', ' ')}" th:selected="${category != null and category == categoryOption.name()}"></option></select></div>
+            <div class="col-sm-6 col-lg-2"><label class="form-label fw-semibold" for="sort">Sort by</label><select class="form-select" id="sort" name="sort"><option value="nameAsc" th:selected="${sort == 'nameAsc'}">Name A–Z</option><option value="nameDesc" th:selected="${sort == 'nameDesc'}">Name Z–A</option><option value="priceAsc" th:selected="${sort == 'priceAsc'}">Price: Low–High</option><option value="priceDesc" th:selected="${sort == 'priceDesc'}">Price: High–Low</option></select></div>
+            <div class="col-sm-6 col-lg-2 d-grid"><button class="btn btn-primary" type="submit">Apply Filters</button></div>
+        </div>
+        <div class="mt-3"><a class="small text-decoration-none" th:href="@{/products}"><i class="bi bi-x-circle me-1"></i>Clear all filters</a></div>
+    </form>
+
+    <div th:if="${productPage != null and productPage.hasContent()}" class="row g-4">
+        <div class="col-sm-6 col-lg-4" th:each="product : ${productPage.content}">
+            <article class="product-card h-100">
+                <div class="product-image-wrap">
+                    <img th:if="${product.imageUrl != null and !#strings.isEmpty(product.imageUrl)}" th:src="${product.imageUrl}" th:alt="${product.name}">
+                    <div th:unless="${product.imageUrl != null and !#strings.isEmpty(product.imageUrl)}" class="product-placeholder"><i class="bi bi-image"></i></div>
+                    <span class="category-badge" th:text="${#strings.replace(product.category.name(), '_', ' ')}">Category</span>
+                </div>
+                <div class="p-4 d-flex flex-column">
+                    <p class="text-primary fw-semibold small mb-1" th:text="${#strings.replace(product.brand.name(), '_', ' ')}">Brand</p>
+                    <h2 class="h5 fw-bold" th:text="${product.name}">Product Name</h2>
+                    <p class="text-secondary product-description" th:text="${product.description}">Description</p>
+                    <div class="d-flex justify-content-between align-items-center mt-auto">
+                        <span class="h4 text-primary fw-bold mb-0" th:text="${#numbers.formatCurrency(product.price)}">$0.00</span>
+                        <span class="small" th:classappend="${product.stockQuantity > 0} ? 'text-success' : 'text-danger'" th:text="${product.stockQuantity > 0} ? ${product.stockQuantity + ' in stock'} : 'Out of stock'">Stock</span>
+                    </div>
+                    <a class="btn btn-outline-primary mt-3 stretched-link" th:href="@{/products/{id}(id=${product.id})}">View Details</a>
+                </div>
+            </article>
+        </div>
+    </div>
+
+    <div th:if="${productPage == null or !productPage.hasContent()}" class="empty-state">
+        <i class="bi bi-search"></i><h2 class="h4">No products found</h2><p class="text-secondary">Try changing your search or filters.</p><a class="btn btn-outline-primary" th:href="@{/products}">Clear Filters</a>
+    </div>
+
+    <nav class="mt-5" aria-label="Product pages" th:if="${productPage != null and productPage.totalPages > 1}">
+        <ul class="pagination justify-content-center flex-wrap">
+            <li class="page-item" th:classappend="${productPage.first} ? 'disabled'"><a class="page-link" th:href="@{/products(page=${productPage.number - 1},search=${search},brand=${brand},category=${category},sort=${sort})}">Previous</a></li>
+            <li class="page-item" th:each="pageNumber : ${#numbers.sequence(0, productPage.totalPages - 1)}" th:classappend="${pageNumber == productPage.number} ? 'active'"><a class="page-link" th:href="@{/products(page=${pageNumber},search=${search},brand=${brand},category=${category},sort=${sort})}" th:text="${pageNumber + 1}">1</a></li>
+            <li class="page-item" th:classappend="${productPage.last} ? 'disabled'"><a class="page-link" th:href="@{/products(page=${productPage.number + 1},search=${search},brand=${brand},category=${category},sort=${sort})}">Next</a></li>
+        </ul>
+    </nav>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer><th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

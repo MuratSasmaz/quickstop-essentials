@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Add Product | QuickStop Essentials</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link th:href="@{/css/styles.css}" rel="stylesheet">
+</head>
+<body class="d-flex flex-column min-vh-100 bg-light">
+<header th:replace="~{fragments/layout :: navbar}"></header>
+<main class="container flex-grow-1 py-5">
+    <div class="row justify-content-center"><div class="col-xl-8">
+        <div class="mb-4"><span class="section-kicker">Product management</span><h1 class="fw-bold">Add a New Product</h1><p class="text-secondary">Enter the product information below. Fields marked with * are required.</p></div>
+        <form class="form-card" th:action="@{/products}" th:object="${product}" method="post" novalidate>
+            <div class="alert alert-danger" role="alert" th:if="${#fields.hasAnyErrors()}"><i class="bi bi-exclamation-triangle-fill me-2"></i>Please correct the highlighted fields and try again.</div>
+            <div class="row g-4">
+                <div class="col-12"><label class="form-label fw-semibold" for="name">Product Name *</label><input class="form-control" th:classappend="${#fields.hasErrors('name')} ? 'is-invalid'" id="name" type="text" th:field="*{name}" maxlength="100" placeholder="e.g., Anker USB-C Charger"><div class="invalid-feedback" th:errors="*{name}">Name error</div><div class="form-text">Enter between 2 and 100 characters.</div></div>
+                <div class="col-12"><label class="form-label fw-semibold" for="description">Description *</label><textarea class="form-control" th:classappend="${#fields.hasErrors('description')} ? 'is-invalid'" id="description" th:field="*{description}" rows="5" maxlength="500" placeholder="Describe the product and its key features"></textarea><div class="invalid-feedback" th:errors="*{description}">Description error</div><div class="form-text">Maximum 500 characters.</div></div>
+                <div class="col-md-6"><label class="form-label fw-semibold" for="price">Price *</label><div class="input-group has-validation"><span class="input-group-text">$</span><input class="form-control" th:classappend="${#fields.hasErrors('price')} ? 'is-invalid'" id="price" type="number" th:field="*{price}" min="0.01" step="0.01" placeholder="0.00"><div class="invalid-feedback" th:errors="*{price}">Price error</div></div></div>
+                <div class="col-md-6"><label class="form-label fw-semibold" for="stockQuantity">Stock Quantity *</label><input class="form-control" th:classappend="${#fields.hasErrors('stockQuantity')} ? 'is-invalid'" id="stockQuantity" type="number" th:field="*{stockQuantity}" min="0" max="10000" step="1" placeholder="0"><div class="invalid-feedback" th:errors="*{stockQuantity}">Stock error</div></div>
+                <div class="col-md-6"><label class="form-label fw-semibold" for="brand">Brand *</label><select class="form-select" th:classappend="${#fields.hasErrors('brand')} ? 'is-invalid'" id="brand" th:field="*{brand}"><option value="">Select a brand</option><option th:each="brandOption : ${brands}" th:value="${brandOption}" th:text="${#strings.replace(brandOption.name(), '_', ' ')}"></option></select><div class="invalid-feedback" th:errors="*{brand}">Brand error</div></div>
+                <div class="col-md-6"><label class="form-label fw-semibold" for="category">Category *</label><select class="form-select" th:classappend="${#fields.hasErrors('category')} ? 'is-invalid'" id="category" th:field="*{category}"><option value="">Select a category</option><option th:each="categoryOption : ${categories}" th:value="${categoryOption}" th:text="${#strings.replace(categoryOption.name(), '_', ' ')}"></option></select><div class="invalid-feedback" th:errors="*{category}">Category error</div></div>
+                <div class="col-12"><label class="form-label fw-semibold" for="imageUrl">Image URL <span class="text-secondary fw-normal">(optional)</span></label><input class="form-control" th:classappend="${#fields.hasErrors('imageUrl')} ? 'is-invalid'" id="imageUrl" type="url" th:field="*{imageUrl}" placeholder="https://example.com/product-image.jpg"><div class="invalid-feedback" th:errors="*{imageUrl}">Image URL error</div></div>
+            </div>
+            <hr class="my-4"><div class="d-flex flex-wrap justify-content-end gap-2"><a class="btn btn-outline-secondary" th:href="@{/products}">Cancel</a><button class="btn btn-primary px-4" type="submit"><i class="bi bi-check-circle me-1"></i>Save Product</button></div>
+        </form>
+    </div></div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer><th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

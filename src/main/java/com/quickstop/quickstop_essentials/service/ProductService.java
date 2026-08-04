@@ -13,7 +13,7 @@ import java.util.List;
 
 @Service
 public class ProductService {
-    
+
     private final ProductRepository productRepository;
 
     public ProductService(ProductRepository productRepository) {
@@ -29,30 +29,79 @@ public class ProductService {
     }
 
     public Product getProductById(Long id) {
-        return productRepository.findById(id).orElseThrow(() -> new RuntimeException("Product not found"));
+        return productRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Product not found with ID: " + id)
+                );
     }
 
-    // pagination
+    public Product updateProduct(Long id, Product updatedProduct) {
+
+        Product existingProduct = getProductById(id);
+
+        existingProduct.setName(updatedProduct.getName());
+        existingProduct.setDescription(updatedProduct.getDescription());
+        existingProduct.setPrice(updatedProduct.getPrice());
+        existingProduct.setStockQuantity(updatedProduct.getStockQuantity());
+        existingProduct.setBrand(updatedProduct.getBrand());
+        existingProduct.setCategory(updatedProduct.getCategory());
+        existingProduct.setImageUrl(updatedProduct.getImageUrl());
+
+        return productRepository.save(existingProduct);
+    }
+
+    public void deleteProduct(Long id) {
+
+        if (!productRepository.existsById(id)) {
+            throw new RuntimeException(
+                    "Product not found with ID: " + id
+            );
+        }
+
+        productRepository.deleteById(id);
+    }
+
+    public long countProducts() {
+        return productRepository.count();
+    }
+
     public Page<Product> getProducts(Pageable pageable) {
         return productRepository.findAll(pageable);
     }
 
-    // search
-    public Page<Product> searchByName(String name, Pageable pageable) {
-        return productRepository.findByNameContainingIgnoreCase(name, pageable);
+    public Page<Product> searchByName(
+            String name,
+            Pageable pageable
+    ) {
+        return productRepository.findByNameContainingIgnoreCase(
+                name,
+                pageable
+        );
     }
 
-    // filters
-    public Page<Product> getProductsByBrand(Brand brand, Pageable pageable) {
+    public Page<Product> getProductsByBrand(
+            Brand brand,
+            Pageable pageable
+    ) {
         return productRepository.findByBrand(brand, pageable);
     }
 
-    public Page<Product> getProductsByCategory(Category category, Pageable pageable) {
+    public Page<Product> getProductsByCategory(
+            Category category,
+            Pageable pageable
+    ) {
         return productRepository.findByCategory(category, pageable);
     }
 
-
-    public Page<Product> getProductsByBrandAndCategory(Brand brand, Category category, Pageable pageable) {
-        return productRepository.findByBrandAndCategory(brand, category, pageable);
+    public Page<Product> getProductsByBrandAndCategory(
+            Brand brand,
+            Category category,
+            Pageable pageable
+    ) {
+        return productRepository.findByBrandAndCategory(
+                brand,
+                category,
+                pageable
+        );
     }
 }

@@ -49,6 +49,7 @@ public class ProductController {
 
     @GetMapping("/products/new")
     public String displayAddProduct(Model model) {
+
         model.addAttribute("product", new Product());
         model.addAttribute("brands", Brand.values());
         model.addAttribute("categories", Category.values());
@@ -64,6 +65,7 @@ public class ProductController {
     ) {
 
         if (bindingResult.hasErrors()) {
+
             model.addAttribute("brands", Brand.values());
             model.addAttribute("categories", Category.values());
 
@@ -103,27 +105,40 @@ public class ProductController {
         Page<Product> productPage;
 
         if (search != null && !search.trim().isEmpty()) {
+
             productPage = productService.searchByName(
                     search.trim(),
                     pageable
             );
-        } else if (selectedBrand != null && selectedCategory != null) {
-            productPage = productService.getProductsByBrandAndCategory(
-                    selectedBrand,
-                    selectedCategory,
-                    pageable
-            );
+
+        } else if (
+                selectedBrand != null &&
+                        selectedCategory != null
+        ) {
+
+            productPage =
+                    productService.getProductsByBrandAndCategory(
+                            selectedBrand,
+                            selectedCategory,
+                            pageable
+                    );
+
         } else if (selectedBrand != null) {
+
             productPage = productService.getProductsByBrand(
                     selectedBrand,
                     pageable
             );
+
         } else if (selectedCategory != null) {
+
             productPage = productService.getProductsByCategory(
                     selectedCategory,
                     pageable
             );
+
         } else {
+
             productPage = productService.getProducts(pageable);
         }
 
@@ -152,8 +167,55 @@ public class ProductController {
         return "products/details";
     }
 
+    @GetMapping("/products/{id}/edit")
+    public String displayEditProduct(
+            @PathVariable Long id,
+            Model model
+    ) {
+
+        Product product = productService.getProductById(id);
+
+        model.addAttribute("product", product);
+        model.addAttribute("brands", Brand.values());
+        model.addAttribute("categories", Category.values());
+
+        return "products/edit";
+    }
+
+    @PostMapping("/products/{id}/edit")
+    public String updateProduct(
+            @PathVariable Long id,
+            @Valid @ModelAttribute("product") Product product,
+            BindingResult bindingResult,
+            Model model
+    ) {
+
+        if (bindingResult.hasErrors()) {
+
+            model.addAttribute("brands", Brand.values());
+            model.addAttribute("categories", Category.values());
+
+            return "products/edit";
+        }
+
+        Product updatedProduct =
+                productService.updateProduct(id, product);
+
+        return "redirect:/products/" + updatedProduct.getId();
+    }
+
+    @PostMapping("/products/{id}/delete")
+    public String deleteProduct(@PathVariable Long id) {
+
+        productService.deleteProduct(id);
+
+        return "redirect:/products";
+    }
+
     private Sort getProductSort(String sort) {
+
         return switch (sort) {
+
             case "nameDesc" ->
                     Sort.by(Sort.Direction.DESC, "name");
 
@@ -169,6 +231,7 @@ public class ProductController {
     }
 
     private Brand parseBrand(String brand) {
+
         if (brand == null || brand.isBlank()) {
             return null;
         }
@@ -181,6 +244,7 @@ public class ProductController {
     }
 
     private Category parseCategory(String category) {
+
         if (category == null || category.isBlank()) {
             return null;
         }
